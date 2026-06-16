@@ -22,55 +22,60 @@ Le projet est pleinement fonctionnel et accessible en ligne — les visiteurs pe
 
 ### ✅ Étape 0 — Initialisation
 - [x] Scaffold Next.js 14 (TypeScript, Tailwind, App Router, src/)
-- [ ] Initialiser git + `.gitignore`
-- [ ] Créer le repo GitHub et premier push
+- [x] Initialiser git + `.gitignore`
+- [x] Créer le repo GitHub et premier push
 
 ---
 
-### Étape 1 — App MongoDB (état « avant »)
+### ✅ Étape 1 — App MongoDB (état « avant »)
 
 Construire l'application de départ avec MongoDB comme source de données.
 
 **Tâches :**
-- [ ] `docker-compose.yml` avec MongoDB (port 27017)
-- [ ] Variables d'environnement (`.env.local`) : `MONGODB_URI`
-- [ ] Connexion MongoDB (`src/lib/mongodb.ts`)
-- [ ] Modèles Mongoose :
+- [x] `docker-compose.yml` avec MongoDB (port 27017)
+- [x] Variables d'environnement (`.env.local`) : `MONGODB_URI`
+- [x] Connexion MongoDB (`src/lib/mongodb.ts`)
+- [x] Modèles Mongoose :
   - `User` — `{ name, email, avatar, bio, createdAt }`
   - `Post` — `{ title, slug, content, author (ref), tags: string[], comments: [{author, content, createdAt}], status, publishedAt }`
   - `Tag` — `{ name, slug }` *(pour référence, les tags sont aussi stockés inline dans Post)*
-- [ ] Script de seed (`scripts/seed.ts`) avec Faker :
+- [x] Script de seed (`scripts/seed.ts`) avec Faker :
   - 50 utilisateurs
   - 500 articles (avec 2–8 tags chacun)
-  - ~3 000 commentaires imbriqués dans les articles
-- [ ] Pages Next.js :
+  - ~2 816 commentaires imbriqués dans les articles
+- [x] Pages Next.js :
   - `/` — liste paginée des articles (titre, auteur, tags, nb de commentaires)
   - `/posts/[slug]` — article complet avec commentaires
-- [ ] Vérifier que `npm run dev` fonctionne et que les données s'affichent
-- [ ] **Commit git : `feat: étape 1 — app Next.js avec MongoDB`**
+- [x] Vérifier que `npm run dev` fonctionne et que les données s'affichent
+- [x] **Commit git : `feat: étape 1 — app Next.js avec MongoDB`**
 
 ---
 
-### Étape 2 — Schéma relationnel cible (Supabase)
+### ✅ Étape 2 — Schéma relationnel cible (Supabase)
 
 Concevoir le schéma PostgreSQL qui remplacera les collections MongoDB.
 
 **Tâches :**
-- [ ] Créer un projet Supabase (gratuit sur supabase.com)
-- [ ] Variables d'environnement : `DATABASE_URL`, `DIRECT_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- [ ] Installer Prisma : `npm install prisma @prisma/client`
-- [ ] Écrire `prisma/schema.prisma` avec les tables :
+- [x] Créer un projet Supabase (`blogmigrate`, eu-west-1, projet ID : `uxuditzgocapinwvmvar`)
+- [x] Variables d'environnement : `DATABASE_URL`, `DIRECT_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- [x] Installer Prisma v5 : `npm install prisma@5 @prisma/client@5`
+- [x] Écrire `prisma/schema.prisma` avec les tables :
   - `users` (id UUID, name, email unique, avatar, bio, createdAt)
   - `posts` (id UUID, title, slug unique, content, authorId FK→users, status, publishedAt, createdAt)
   - `comments` (id UUID, postId FK→posts, authorId FK→users, content, createdAt)
   - `tags` (id UUID, name unique, slug unique)
   - `post_tags` (postId FK→posts, tagId FK→tags) — table de jonction
-- [ ] `npx prisma migrate dev --name init` pour générer et appliquer la migration SQL
-- [ ] **Commit git : `feat: étape 2 — schéma Prisma/Supabase`**
+- [x] Migration `20260616234219_init` appliquée sur Supabase
+- [x] Singleton PrismaClient (`src/lib/prisma.ts`)
+- [x] **Commit git : `feat: étape 2 — schéma Prisma/Supabase`**
+
+**Notes :**
+- Prisma 7 a cassé la compatibilité avec `url` dans `schema.prisma` → downgrade vers Prisma 5
+- Prisma lit `.env`, pas `.env.local` → les variables DATABASE_URL/DIRECT_URL doivent être dans `.env`
 
 ---
 
-### Étape 3 — Script de migration des données
+### Étape 3 — Script de migration des données - On reprend ici
 
 Transférer les données de MongoDB vers Supabase en gérant les transformations.
 
@@ -192,4 +197,4 @@ BlogMigrate/
 
 ## Étape en cours
 
-**→ Étape 1 : App MongoDB**
+**→ Étape 3 : Script de migration MongoDB → Supabase**
