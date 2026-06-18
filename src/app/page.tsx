@@ -30,10 +30,17 @@ export default async function HomePage({ searchParams }: PageProps) {
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
-      <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
-        <div className="max-w-4xl mx-auto px-6 py-5 flex items-center justify-between">
-          <h1 className="text-xl font-bold tracking-tight">BlogMigrate</h1>
-          <span className="text-sm text-zinc-500">{total} articles</span>
+      <header className="bg-gradient-to-br from-indigo-600 via-blue-600 to-cyan-500 text-white">
+        <div className="max-w-4xl mx-auto px-6 py-16 text-center">
+          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">BlogMigrate</h1>
+          <p className="mt-4 text-lg text-blue-100 max-w-2xl mx-auto">
+            {total} articles migrés en direct de MongoDB vers Supabase (PostgreSQL) — données en temps réel.
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-2 text-sm">
+            <span className="px-3 py-1 rounded-full bg-white/15 backdrop-blur">Next.js</span>
+            <span className="px-3 py-1 rounded-full bg-white/15 backdrop-blur">Supabase</span>
+            <span className="px-3 py-1 rounded-full bg-white/15 backdrop-blur">Prisma</span>
+          </div>
         </div>
       </header>
 
