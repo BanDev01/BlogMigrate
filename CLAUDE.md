@@ -89,7 +89,7 @@ Transférer les données de MongoDB vers Supabase en gérant les transformations
 - [x] Inserts par lots (batch de 100) pour la performance
 - [x] Logs de progression + rapport final (nb de lignes insérées)
 - [x] `npm run migrate` dans `package.json`
-- [ ] **Commit git : `feat: étape 3 — script de migration MongoDB→Supabase`**
+- [x] **Commit git : `feat: étape 3 — script de migration MongoDB→Supabase`**
 
 **Résultat :** 50 users, 50 tags, 500 posts, 2816 commentaires, 2278 relations post_tags migrés sans erreur.
 
@@ -105,24 +105,30 @@ Remplacer la couche MongoDB par Supabase/Prisma, sans changer le comportement vi
 - [x] La page `/` et `/posts/[slug]` doivent afficher **exactement le même contenu** qu'avant
 - [x] Supprimer les imports Mongoose des pages (garder les modèles pour référence dans `/src/lib/models/`)
 - [x] Vérifier `npm run dev` et `npm run build` sans erreurs
-- [ ] **Commit git : `feat: étape 4 — couche de données migrée vers Supabase`**
+- [x] **Commit git : `feat: étape 4 — couche de données migrée vers Supabase`**
 
 ---
 
-### Étape 5 — Tests et validation
+### ✅ Étape 5 — Tests et validation
 
 Prouver que la migration est correcte et fonctionnellement transparente.
 
 **Tâches :**
-- [ ] Script de validation (`migration/validate.ts`) :
+- [x] Script de validation (`migration/validate.ts`) :
   - Comparer les counts MongoDB ↔ PostgreSQL (users, posts, comments, tags)
-  - Vérifier l'intégrité référentielle (0 commentaire orphelin, 0 post sans auteur)
+  - Vérifier l'intégrité référentielle (0 commentaire orphelin, 0 post sans auteur) via requêtes SQL LEFT JOIN
   - Comparer 5 articles « avant/après » (titre, auteur, nb de commentaires)
-- [ ] Tests Playwright (`tests/`) :
+- [x] Tests Playwright (`tests/blog.spec.ts`) :
   - La liste des articles s'affiche avec le bon nombre d'entrées
   - Une page article affiche l'auteur, les tags, et les commentaires
-- [ ] `npm run validate` + `npm run test:e2e` dans `package.json`
+- [x] `npm run validate` + `npm run test:e2e` dans `package.json`
 - [ ] **Commit git : `test: étape 5 — validation et tests E2E`**
+
+**Résultat :** `npm run validate` → SUCCÈS (50 users, 50 tags, 500 posts, 2816 comments, 0 orphelin). `npm run test:e2e` → 2/2 tests passés.
+
+**Notes :**
+- Le pooler Supabase (free tier) a des coupures TCP intermittentes (`Can't reach database server`) — transitoire, pas un bug applicatif. Relancer suffit.
+- Browsers Playwright téléchargés via `playwright.dev` bloqués sur ce réseau (DNS) → config pointée sur Chrome local via `channel: "chrome"` dans `playwright.config.ts`.
 
 ---
 
@@ -199,4 +205,4 @@ BlogMigrate/
 
 ## Étape en cours
 
-**→ Étape 5 : Tests et validation (script de validation + tests Playwright)**
+**→ Étape 6 : Documentation (README)**
