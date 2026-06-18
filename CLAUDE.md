@@ -122,7 +122,7 @@ Prouver que la migration est correcte et fonctionnellement transparente.
   - La liste des articles s'affiche avec le bon nombre d'entrées
   - Une page article affiche l'auteur, les tags, et les commentaires
 - [x] `npm run validate` + `npm run test:e2e` dans `package.json`
-- [ ] **Commit git : `test: étape 5 — validation et tests E2E`**
+- [x] **Commit git : `test: étape 5 — validation et tests E2E`**
 
 **Résultat :** `npm run validate` → SUCCÈS (50 users, 50 tags, 500 posts, 2816 comments, 0 orphelin). `npm run test:e2e` → 2/2 tests passés.
 
@@ -132,12 +132,12 @@ Prouver que la migration est correcte et fonctionnellement transparente.
 
 ---
 
-### Étape 6 — Documentation (README)
+### ✅ Étape 6 — Documentation (README)
 
 Rendre le dépôt compréhensible et vendable sur Upwork.
 
 **Tâches :**
-- [ ] Réécrire `README.md` :
+- [x] Réécrire `README.md` :
   - Badges (Next.js, MongoDB, Supabase, Prisma, Playwright)
   - Diagramme schéma MongoDB « avant » (texte ASCII ou Mermaid)
   - Diagramme schéma SQL « après » (Mermaid ERD)
@@ -205,4 +205,4 @@ BlogMigrate/
 
 ## Étape en cours
 
-**→ Étape 6 : Documentation (README)**
+**→ Toutes les étapes sont terminées. Projet prêt pour publication / Upwork.**
