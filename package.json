@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed": "tsx scripts/seed.ts"
+    "seed": "tsx scripts/seed.ts",
+    "migrate": "tsx migration/migrate.ts"
   },
   "dependencies": {
     "@faker-js/faker": "^10.4.0",

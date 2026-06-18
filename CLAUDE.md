@@ -75,21 +75,23 @@ Concevoir le schéma PostgreSQL qui remplacera les collections MongoDB.
 
 ---
 
-### Étape 3 — Script de migration des données - On reprend ici
+### ✅ Étape 3 — Script de migration des données
 
 Transférer les données de MongoDB vers Supabase en gérant les transformations.
 
 **Tâches :**
-- [ ] Créer `migration/migrate.ts`
-- [ ] Migrer les **users** (ObjectId Mongo → UUID Postgres, table de mapping en mémoire)
-- [ ] Migrer les **tags** (dédoublonner, créer en une passe)
-- [ ] Migrer les **posts** (résoudre la FK `authorId` via la table de mapping)
-- [ ] Migrer les **commentaires imbriqués** → table `comments` (aplatissement, résolution FK)
-- [ ] Peupler **post_tags** (jonction posts ↔ tags)
-- [ ] Inserts par lots (batch de 100) pour la performance
-- [ ] Logs de progression + rapport final (nb de lignes insérées)
-- [ ] `npm run migrate` dans `package.json`
+- [x] Créer `migration/migrate.ts`
+- [x] Migrer les **users** (ObjectId Mongo → UUID Postgres, table de mapping en mémoire)
+- [x] Migrer les **tags** (dédoublonner, créer en une passe)
+- [x] Migrer les **posts** (résoudre la FK `authorId` via la table de mapping)
+- [x] Migrer les **commentaires imbriqués** → table `comments` (aplatissement, résolution FK)
+- [x] Peupler **post_tags** (jonction posts ↔ tags)
+- [x] Inserts par lots (batch de 100) pour la performance
+- [x] Logs de progression + rapport final (nb de lignes insérées)
+- [x] `npm run migrate` dans `package.json`
 - [ ] **Commit git : `feat: étape 3 — script de migration MongoDB→Supabase`**
+
+**Résultat :** 50 users, 50 tags, 500 posts, 2816 commentaires, 2278 relations post_tags migrés sans erreur.
 
 ---
 
@@ -197,4 +199,4 @@ BlogMigrate/
 
 ## Étape en cours
 
-**→ Étape 3 : Script de migration MongoDB → Supabase**
+**→ Étape 4 : Adapter le code applicatif (remplacer Mongoose par Prisma dans les pages)**
