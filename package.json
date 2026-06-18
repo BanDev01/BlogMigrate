@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "seed": "tsx scripts/seed.ts",
-    "migrate": "tsx migration/migrate.ts"
+    "migrate": "tsx migration/migrate.ts",
+    "validate": "tsx migration/validate.ts",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@faker-js/faker": "^10.4.0",
@@ -20,6 +22,7 @@
     "react-dom": "19.2.4"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

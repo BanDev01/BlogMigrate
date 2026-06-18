@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { connectToDatabase } from "@/lib/mongodb";
-import Post from "@/lib/models/Post";
-import "@/lib/models/User";
+import prisma from "@/lib/prisma";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -11,16 +9,21 @@ interface PageProps {
 export default async function PostPage({ params }: PageProps) {
   const { slug } = await params;
 
-  await connectToDatabase();
-
-  const post = await Post.findOne({ slug, status: "published" })
-    .populate<{ author: { name: string; avatar: string } }>("author", "name avatar")
-    .populate<{ "comments.author": { name: string } }>("comments.author", "name")
-    .lean();
+  const post = await prisma.post.findFirst({
+    where: { slug, status: "published" },
+    include: {
+      author: { select: { name: true, avatar: true } },
+      postTags: { include: { tag: true } },
+      comments: {
+        orderBy: { createdAt: "asc" },
+        include: { author: { select: { name: true } } },
+      },
+    },
+  });
 
   if (!post) notFound();
 
-  const author = post.author as { name: string; avatar: string };
+  const author = post.author;
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
@@ -38,12 +41,12 @@ export default async function PostPage({ params }: PageProps) {
       <main className="max-w-3xl mx-auto px-6 py-12">
         <article>
           <div className="mb-6 flex flex-wrap gap-2">
-            {post.tags.map((tag) => (
+            {post.postTags.map(({ tag }) => (
               <span
-                key={tag}
+                key={tag.id}
                 className="px-2 py-0.5 text-xs rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
               >
-                {tag}
+                {tag.name}
               </span>
             ))}
           </div>
@@ -91,34 +94,29 @@ export default async function PostPage({ params }: PageProps) {
           </h2>
 
           <div className="space-y-6">
-            {post.comments.map((comment, i) => {
-              const commentAuthor = comment.author as unknown as {
-                name: string;
-              };
-              return (
-                <div
-                  key={i}
-                  className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-5"
-                >
-                  <div className="flex items-center gap-2 mb-3 text-sm">
-                    <span className="font-medium text-zinc-800 dark:text-zinc-200">
-                      {commentAuthor?.name ?? "Utilisateur inconnu"}
-                    </span>
-                    <span className="text-zinc-400">·</span>
-                    <span className="text-zinc-500">
-                      {new Date(comment.createdAt).toLocaleDateString("fr-FR", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </span>
-                  </div>
-                  <p className="text-zinc-600 dark:text-zinc-400 text-sm leading-6">
-                    {comment.content}
-                  </p>
+            {post.comments.map((comment) => (
+              <div
+                key={comment.id}
+                className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-5"
+              >
+                <div className="flex items-center gap-2 mb-3 text-sm">
+                  <span className="font-medium text-zinc-800 dark:text-zinc-200">
+                    {comment.author?.name ?? "Utilisateur inconnu"}
+                  </span>
+                  <span className="text-zinc-400">·</span>
+                  <span className="text-zinc-500">
+                    {new Date(comment.createdAt).toLocaleDateString("fr-FR", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </span>
                 </div>
-              );
-            })}
+                <p className="text-zinc-600 dark:text-zinc-400 text-sm leading-6">
+                  {comment.content}
+                </p>
+              </div>
+            ))}
           </div>
         </section>
       </main>

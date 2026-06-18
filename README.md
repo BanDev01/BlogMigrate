@@ -2,10 +2,9 @@
 
 <div align="center">
 
-**A fully functional blog platform built to showcase a real-world database migration — from MongoDB to Supabase (PostgreSQL) — without a single line of UI changing.**
+**Une application blog pleinement fonctionnelle, construite pour illustrer une vraie migration de base de données — de MongoDB vers Supabase (PostgreSQL) — sans qu'une seule ligne de l'interface ne change.**
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-black?style=for-the-badge&logo=vercel)](https://blogmigrate.vercel.app)
-[![Next.js](https://img.shields.io/badge/Next.js%2014-black?style=for-the-badge&logo=next.js)](https://nextjs.org)
+[![Next.js](https://img.shields.io/badge/Next.js%2016-black?style=for-the-badge&logo=next.js)](https://nextjs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com)
 [![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com)
@@ -16,34 +15,29 @@
 
 ---
 
-## What is this?
+## Qu'est-ce que ce projet ?
 
-BlogMigrate is a production-grade blog application — 500 articles, 50 authors, 3 000+ comments, full tag system — deployed live on Vercel and backed by **Supabase (PostgreSQL)**.
+BlogMigrate est une application blog — 50 auteurs, 500 articles, 2 816 commentaires, système de tags complet — initialement construite sur **MongoDB**, puis migrée intégralement vers **Supabase (PostgreSQL)** via Prisma.
 
-The twist: the app was originally built on **MongoDB**, and this repository documents the complete migration path from document store to relational database. Every step is preserved in the git history: schema design, data transformation script, code adaptation, and validation suite.
-
-> **[→ See it live](https://blogmigrate.vercel.app)**
-> Browse articles, read comments, filter by tag — all served from Supabase in production.
+Chaque étape de la migration est conservée dans l'historique git : conception du schéma relationnel, script de transformation des données, adaptation du code applicatif, et suite de validation. Le contenu (titres, corps d'articles) est généré par Faker.js — texte factice de type Lorem Ipsum, pas un vrai contenu éditorial.
 
 ---
 
-## Why this project exists
+## Pourquoi ce projet
 
-Migrating a document database to a relational one is one of the most common — and most error-prone — tasks in backend engineering. Three problems make it hard:
+Migrer une base documents vers une base relationnelle est l'une des tâches les plus fréquentes — et les plus risquées — en ingénierie backend. Trois problèmes structurels rendent l'exercice intéressant :
 
-| MongoDB pattern | SQL equivalent | The challenge |
+| Pattern MongoDB | Équivalent SQL | Le défi |
 |---|---|---|
-| `posts.author` (ObjectId ref) | `posts.author_id` FK → `users` | Mapping document IDs to relational keys |
-| `posts.tags: ["js", "react"]` | `tags` + `post_tags` junction table | Deduplication + many-to-many explosion |
-| `posts.comments: [{...}]` | `comments` table with FK | Flattening nested arrays, preserving order |
-
-If you can handle these three, you can handle 90% of real migrations.
+| `posts.author` (ObjectId ref) | `posts.authorId` FK → `users` | Convertir des ObjectId Mongo en UUID Postgres, en gardant la correspondance |
+| `posts.tags: string[]` | `tags` + table de jonction `post_tags` | Dédoublonner les tags, gérer la relation plusieurs-à-plusieurs |
+| `posts.comments: [{...}]` | table `comments` avec FK | Aplatir un tableau de sous-documents imbriqués en lignes indépendantes |
 
 ---
 
 ## Architecture
 
-### Before — MongoDB collections
+### Avant — Collections MongoDB
 
 ```
 users               posts
@@ -52,7 +46,7 @@ _id: ObjectId       _id: ObjectId
 name: String        title: String
 email: String       slug: String
 avatar: String      content: String
-bio: String         author: ObjectId  ──→  users._id
+bio: String          author: ObjectId  ──→  users._id
 createdAt: Date     tags: ["js", "react", ...]
                     comments: [
                       { author: ObjectId, content, createdAt },
@@ -60,9 +54,15 @@ createdAt: Date     tags: ["js", "react", ...]
                     ]
                     status: "published" | "draft"
                     publishedAt: Date
+
+tags (collection séparée, pour référence)
+─────────
+_id: ObjectId
+name: String
+slug: String
 ```
 
-### After — PostgreSQL / Supabase
+### Après — PostgreSQL / Supabase
 
 ```mermaid
 erDiagram
@@ -72,24 +72,24 @@ erDiagram
         string email
         string avatar
         text bio
-        timestamp created_at
+        timestamp createdAt
     }
     posts {
         uuid id PK
         string title
         string slug
         text content
-        uuid author_id FK
+        uuid authorId FK
         string status
-        timestamp published_at
-        timestamp created_at
+        timestamp publishedAt
+        timestamp createdAt
     }
     comments {
         uuid id PK
-        uuid post_id FK
-        uuid author_id FK
+        uuid postId FK
+        uuid authorId FK
         text content
-        timestamp created_at
+        timestamp createdAt
     }
     tags {
         uuid id PK
@@ -97,96 +97,131 @@ erDiagram
         string slug
     }
     post_tags {
-        uuid post_id FK
-        uuid tag_id FK
+        uuid postId FK
+        uuid tagId FK
     }
-    users ||--o{ posts : "writes"
-    users ||--o{ comments : "writes"
-    posts ||--o{ comments : "has"
+    users ||--o{ posts : "écrit"
+    users ||--o{ comments : "écrit"
+    posts ||--o{ comments : "a"
     posts }o--o{ tags : "post_tags"
 ```
 
 ---
 
-## Migration in 4 steps
+## La migration en 4 étapes
 
 ### 1. Seed MongoDB
-Generate realistic data with Faker — 50 users, 500 posts, ~3 000 embedded comments.
+Génère des données réalistes avec Faker — 50 utilisateurs, 500 articles, ~2 800 commentaires imbriqués.
 ```bash
-docker-compose up -d   # MongoDB on port 27017
-npm run seed           # populate collections
+docker-compose up -d   # MongoDB sur le port 27017
+npm run seed
 ```
 
-### 2. Design the Supabase schema
-`prisma/schema.prisma` defines the target tables. One command pushes it to Supabase:
+### 2. Concevoir le schéma Supabase
+`prisma/schema.prisma` définit les tables cibles (`users`, `posts`, `comments`, `tags`, `post_tags`). La migration Prisma est appliquée directement sur Supabase :
 ```bash
 npx prisma migrate dev --name init
 ```
 
-### 3. Run the migration script
-`migration/migrate.ts` connects to both databases simultaneously, transforms every document, and inserts data in batches of 100. It keeps an in-memory ID map (Mongo ObjectId → Postgres UUID) to resolve all foreign keys.
+### 3. Exécuter le script de migration
+`migration/migrate.ts` se connecte aux deux bases simultanément, transforme chaque document et insère les données par lots de 100. Une table de correspondance en mémoire (ObjectId Mongo → UUID Postgres) résout toutes les clés étrangères. Le script vide d'abord les tables Postgres (dans l'ordre inverse des dépendances) avant de réinsérer — il est donc rejouable sans risque.
 ```bash
 npm run migrate
-# ✓ 50 users migrated
-# ✓ 47 tags deduplicated and inserted
-# ✓ 500 posts migrated
-# ✓ 3 241 comments flattened and inserted
-# ✓ 1 876 post_tags relationships created
+```
+**Résultat réel observé :**
+```
+✓ 50 users migrés
+✓ 50 tags migrés
+✓ 500 posts migrés
+✓ 2816 commentaires migrés
+✓ 2278 relations post_tags migrées
 ```
 
-### 4. Validate — zero data loss
-`migration/validate.ts` cross-checks both databases:
-- Row counts match on every table
-- No orphaned comments (referential integrity)
-- Spot-check 5 posts: same title, author, comment count on both sides
+### 4. Valider — zéro perte de données
+`migration/validate.ts` croise les deux bases :
+- Les compteurs de lignes correspondent sur chaque table
+- Aucun commentaire orphelin, aucun post sans auteur (intégrité référentielle via requêtes SQL `LEFT JOIN`)
+- 5 articles comparés un par un (titre, auteur, nombre de commentaires) entre Mongo et Postgres
 ```bash
 npm run validate
 ```
+**Résultat réel observé :** SUCCÈS — 50 users, 50 tags, 500 posts, 2 816 comments, 0 orphelin, 5/5 articles identiques.
 
 ---
 
-## Quick start
+## Défis techniques
 
-**Prerequisites:** Node 18+, Docker
+**Documents imbriqués → table relationnelle**
+Les commentaires vivaient comme sous-documents dans `posts.comments[]`. Il a fallu les aplatir en lignes de la table `comments`, chacune portant une FK vers son post d'origine — perdue l'imbrication, gagnée la possibilité de requêter les commentaires indépendamment des articles.
+
+**Relation plusieurs-à-plusieurs**
+`posts.tags` était un simple tableau de chaînes (`["js", "react"]`), dupliqué sur chaque article. Côté SQL, il fallait dédoublonner les tags en une table unique puis peupler une table de jonction `post_tags` — avec gestion des doublons (`skipDuplicates`) au cas où un même tag apparaîtrait plusieurs fois sur un article.
+
+**Mapping d'identifiants**
+MongoDB utilise des `ObjectId`, Postgres des `UUID` — deux formats incompatibles. La solution : générer un nouvel UUID pour chaque ligne migrée et maintenir des `Map<string, string>` en mémoire (Mongo ID → UUID Postgres) pour résoudre les clés étrangères au moment de l'insertion, dans l'ordre users → tags → posts → comments → post_tags.
+
+**Filtres Prisma sur relations obligatoires**
+Prisma interdit `where: { relation: null }` sur une relation non-nullable (erreur TypeScript à la compilation). Les contrôles d'intégrité référentielle (`validate.ts`) ont donc été écrits en SQL brut via `prisma.$queryRaw`, avec des `LEFT JOIN ... WHERE x.id IS NULL`.
+
+**Connectivité du pooler Supabase (free tier)**
+Le pooler de connexion Supabase (`pooler.supabase.com:6543`) présente des coupures TCP intermittentes en environnement gratuit (`Can't reach database server`, erreur Prisma P1001). Diagnostiqué comme un problème d'infrastructure côté Supabase (l'API REST restait joignable pendant les coupures) — pas un bug applicatif. Une simple relance résout le problème.
+
+---
+
+## Tests
+
+- **Validation de migration** (`npm run validate`) : compare les compteurs et l'intégrité référentielle entre MongoDB et Postgres. ✅ SUCCÈS — aucune divergence détectée.
+- **Tests E2E Playwright** (`npm run test:e2e`) : vérifie que la liste d'articles s'affiche avec le bon nombre d'entrées, et qu'une page article affiche correctement l'auteur, les tags et les commentaires. ✅ 2/2 tests passés.
+
+> Note environnement : Playwright est configuré pour utiliser le Chrome installé localement (`channel: "chrome"` dans `playwright.config.ts`) plutôt que de télécharger son propre Chromium, en raison d'une restriction réseau bloquant `cdn.playwright.dev` sur l'environnement de développement.
+
+---
+
+## Démarrage rapide
+
+**Prérequis :** Node 18+, Docker
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/BlogMigrate.git
+git clone https://github.com/BanDev01/BlogMigrate.git
 cd BlogMigrate
 
 npm install
 
-# Start MongoDB
+# Démarrer MongoDB
 docker-compose up -d
 
-# Copy environment variables
-cp .env.example .env.local
-# → fill in your Supabase credentials
+# Copier les variables d'environnement
+cp .env.example .env
+# → renseigner MONGODB_URI, DATABASE_URL, DIRECT_URL, NEXT_PUBLIC_SUPABASE_*
 
-# Seed MongoDB with fake data
+# Peupler MongoDB avec des données factices
 npm run seed
 
-# Run the app (MongoDB mode)
+# Lancer l'app (mode MongoDB)
 npm run dev
 
-# Migrate to Supabase
+# Appliquer le schéma Prisma sur Supabase
+npx prisma migrate dev --name init
+
+# Migrer les données vers Supabase
 npm run migrate
 
-# Validate migration integrity
+# Valider l'intégrité de la migration
 npm run validate
 
-# E2E tests
+# Tests E2E
 npm run test:e2e
 ```
 
 ---
 
-## Environment variables
+## Variables d'environnement
 
 ```bash
-# MongoDB (local Docker)
+# MongoDB (Docker local)
 MONGODB_URI=mongodb://localhost:27017/blogmigrate
 
-# Supabase
+# Supabase / Prisma (doivent être dans .env, pas .env.local — Prisma ne lit que .env)
 DATABASE_URL=postgresql://...
 DIRECT_URL=postgresql://...
 NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
@@ -195,55 +230,54 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 
 ---
 
-## Project structure
+## Structure du projet
 
 ```
 BlogMigrate/
 ├── docker-compose.yml          # MongoDB local
 ├── prisma/
-│   └── schema.prisma           # Target schema (Supabase/PostgreSQL)
+│   └── schema.prisma           # Schéma cible (Supabase/PostgreSQL)
 ├── migration/
-│   ├── migrate.ts              # MongoDB → Supabase data transfer
-│   └── validate.ts             # Cross-database validation
+│   ├── migrate.ts              # Transfert de données MongoDB → Supabase
+│   └── validate.ts             # Validation croisée entre les deux bases
 ├── scripts/
-│   └── seed.ts                 # Faker data generator
+│   └── seed.ts                 # Générateur de données Faker
 ├── src/
 │   ├── app/
-│   │   ├── page.tsx            # Article list (paginated)
+│   │   ├── page.tsx            # Liste des articles (paginée)
 │   │   └── posts/[slug]/
-│   │       └── page.tsx        # Article detail + comments
+│   │       └── page.tsx        # Détail article + commentaires
 │   └── lib/
-│       ├── mongodb.ts          # MongoDB connection
-│       ├── prisma.ts           # Prisma client (Supabase)
-│       └── models/             # Mongoose models
+│       ├── mongodb.ts          # Connexion MongoDB
+│       ├── prisma.ts           # Client Prisma (singleton, Supabase)
+│       └── models/             # Modèles Mongoose (conservés pour référence)
 │           ├── User.ts
 │           ├── Post.ts
 │           └── Tag.ts
 └── tests/
-    └── blog.spec.ts            # Playwright E2E tests
+    └── blog.spec.ts            # Tests E2E Playwright
 ```
 
 ---
 
-## Rollback plan
+## Plan de rollback
 
-If the migration fails partway through:
-1. `npm run migrate -- --rollback` truncates all Supabase tables (safe — source MongoDB is untouched)
-2. Fix the issue, re-run `npm run migrate`
-3. `npm run validate` confirms integrity before switching traffic
+La migration ne modifie jamais MongoDB — seule la base Postgres est écrite. En cas de problème :
 
-The app can point to either database by toggling `DATA_SOURCE=mongodb|supabase` in `.env.local`.
+1. `migration/migrate.ts` vide systématiquement les tables Postgres (`post_tags`, `comments`, `posts`, `tags`, `users`, dans cet ordre) avant de réinsérer — relancer `npm run migrate` repart donc toujours d'un état propre, sans accumulation de doublons.
+2. Si une migration partielle a échoué en cours de route, il suffit de corriger le problème et de relancer `npm run migrate` : le script repart de zéro côté Postgres.
+3. `npm run validate` doit confirmer un SUCCÈS complet avant de considérer la migration comme terminée.
+4. La source MongoDB reste intacte et disponible à tout moment comme filet de sécurité — aucune donnée source n'est jamais supprimée ou modifiée par le processus de migration.
 
 ---
 
-## Tech stack
+## Stack technique
 
-| Layer | Technology |
+| Couche | Technologie |
 |---|---|
-| Framework | Next.js 14, TypeScript, Tailwind CSS |
-| Deployment | Vercel |
-| Source database | MongoDB + Mongoose |
-| Target database | Supabase (PostgreSQL) + Prisma ORM |
-| Data generation | @faker-js/faker |
-| E2E testing | Playwright |
-| Local infra | Docker + docker-compose |
+| Framework | Next.js 16, TypeScript, Tailwind CSS |
+| Base source | MongoDB + Mongoose (Docker local) |
+| Base cible | Supabase (PostgreSQL) + Prisma ORM v5 |
+| Génération de données | @faker-js/faker |
+| Tests E2E | Playwright |
+| Infra locale | Docker + docker-compose |
