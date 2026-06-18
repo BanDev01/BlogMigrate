@@ -13,6 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://blog-migrate.vercel.app"),
   title: "BlogMigrate — Blog & CMS avec Next.js",
   description: "Application blog complète illustrant une migration MongoDB → Supabase (PostgreSQL).",
 };
