@@ -95,16 +95,16 @@ Transférer les données de MongoDB vers Supabase en gérant les transformations
 
 ---
 
-### Étape 4 — Adapter le code applicatif
+### ✅ Étape 4 — Adapter le code applicatif
 
 Remplacer la couche MongoDB par Supabase/Prisma, sans changer le comportement visible.
 
 **Tâches :**
-- [ ] Créer `src/lib/prisma.ts` (singleton PrismaClient)
-- [ ] Remplacer les requêtes Mongoose dans les pages par des requêtes Prisma
-- [ ] La page `/` et `/posts/[slug]` doivent afficher **exactement le même contenu** qu'avant
-- [ ] Supprimer les imports Mongoose des pages (garder les modèles pour référence dans `/src/lib/models/`)
-- [ ] Vérifier `npm run dev` et `npm run build` sans erreurs
+- [x] Créer `src/lib/prisma.ts` (singleton PrismaClient) — fait à l'étape 2
+- [x] Remplacer les requêtes Mongoose dans les pages par des requêtes Prisma
+- [x] La page `/` et `/posts/[slug]` doivent afficher **exactement le même contenu** qu'avant
+- [x] Supprimer les imports Mongoose des pages (garder les modèles pour référence dans `/src/lib/models/`)
+- [x] Vérifier `npm run dev` et `npm run build` sans erreurs
 - [ ] **Commit git : `feat: étape 4 — couche de données migrée vers Supabase`**
 
 ---
@@ -199,4 +199,4 @@ BlogMigrate/
 
 ## Étape en cours
 
-**→ Étape 4 : Adapter le code applicatif (remplacer Mongoose par Prisma dans les pages)**
+**→ Étape 5 : Tests et validation (script de validation + tests Playwright)**

@@ -1,7 +1,5 @@
 import Link from "next/link";
-import { connectToDatabase } from "@/lib/mongodb";
-import Post from "@/lib/models/Post";
-import "@/lib/models/User";
+import prisma from "@/lib/prisma";
 
 const PAGE_SIZE = 20;
 
@@ -13,16 +11,19 @@ export default async function HomePage({ searchParams }: PageProps) {
   const params = await searchParams;
   const page = Math.max(1, parseInt(params.page ?? "1", 10));
 
-  await connectToDatabase();
-
   const [posts, total] = await Promise.all([
-    Post.find({ status: "published" })
-      .populate<{ author: { name: string } }>("author", "name")
-      .sort({ publishedAt: -1 })
-      .skip((page - 1) * PAGE_SIZE)
-      .limit(PAGE_SIZE)
-      .lean(),
-    Post.countDocuments({ status: "published" }),
+    prisma.post.findMany({
+      where: { status: "published" },
+      orderBy: { publishedAt: "desc" },
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+      include: {
+        author: { select: { name: true } },
+        _count: { select: { comments: true } },
+        postTags: { include: { tag: true } },
+      },
+    }),
+    prisma.post.count({ where: { status: "published" } }),
   ]);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
@@ -40,7 +41,7 @@ export default async function HomePage({ searchParams }: PageProps) {
         <div className="space-y-4">
           {posts.map((post) => (
             <article
-              key={String(post._id)}
+              key={post.id}
               className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 hover:border-zinc-400 dark:hover:border-zinc-600 transition-colors"
             >
               <div className="flex items-start justify-between gap-4">
@@ -52,9 +53,7 @@ export default async function HomePage({ searchParams }: PageProps) {
                     {post.title}
                   </Link>
                   <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-zinc-500">
-                    <span>
-                      {(post.author as { name: string })?.name ?? "Unknown"}
-                    </span>
+                    <span>{post.author?.name ?? "Unknown"}</span>
                     <span>·</span>
                     <span>
                       {post.publishedAt
@@ -66,18 +65,18 @@ export default async function HomePage({ searchParams }: PageProps) {
                         : ""}
                     </span>
                     <span>·</span>
-                    <span>{post.comments?.length ?? 0} commentaires</span>
+                    <span>{post._count.comments} commentaires</span>
                   </div>
                 </div>
               </div>
-              {post.tags && post.tags.length > 0 && (
+              {post.postTags.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {post.tags.slice(0, 5).map((tag) => (
+                  {post.postTags.slice(0, 5).map(({ tag }) => (
                     <span
-                      key={tag}
+                      key={tag.id}
                       className="px-2 py-0.5 text-xs rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
                     >
-                      {tag}
+                      {tag.name}
                     </span>
                   ))}
                 </div>
