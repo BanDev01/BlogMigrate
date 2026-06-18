@@ -11,6 +11,8 @@
 [![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white)](https://www.prisma.io)
 [![Playwright](https://img.shields.io/badge/Playwright-45ba4b?style=for-the-badge&logo=playwright&logoColor=white)](https://playwright.dev)
 
+### 🔗 [Voir la démo en ligne](https://blog-migrate.vercel.app/)
+
 </div>
 
 ---
